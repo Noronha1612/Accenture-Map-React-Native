@@ -7,6 +7,7 @@ import Home from './screens/Home';
 import Accenture from './screens/Accenture';
 
 import Header from './components/Header';
+import Contact from './screens/Contact';
 
 const { Navigator, Screen } = createStackNavigator();
 
@@ -31,6 +32,14 @@ export default function Routes() {
                     options={{
                         headerShown: true,
                         header: () => <Header title="Accenture" showCancel={ false } /> 
+                    }}
+                />
+                <Screen 
+                    name="Contact"
+                    component={ Contact }
+                    options={{
+                        headerShown: true,
+                        header: () => <Header title="Contact" /> 
                     }}
                 />
             </Navigator>
