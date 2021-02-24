@@ -1,55 +1,90 @@
-import React, { useCallback } from 'react';
-import { View, StyleSheet, Text, Dimensions } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, StyleSheet, Text, Dimensions, TextInput } from 'react-native';
 import { RectButton } from 'react-native-gesture-handler';
 import MapView, { Callout, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
 import PinInsert from '../images/Pin.png';
+import { getData } from '../services';
+import { AccenturePoint, IInitialMarker } from '../interfaces';
 
 export default function Home() {
     const navigation = useNavigation();
 
-    const handlePageDetails = useCallback(() => {
-        navigation.navigate('Accenture');
+    const [ accenturePoints, setAccenturePoints ] = useState<AccenturePoint[]>([]);
+    const [ initialMarker, setInitialMarker ] = useState<IInitialMarker>({
+      latitude: -23.4852324,
+      longitude: -46.864544433009236,
+      latitudeDelta: 0.008,
+      longitudeDelta: 0.008
+    });
+
+    const handlePageDetails = useCallback(( id: number ) => {
+        navigation.navigate('Accenture', { id });
     }, [ navigation ]);
+    
+
+    useEffect(() => {
+      navigator.geolocation.getCurrentPosition(
+        position => {
+          setInitialMarker({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            latitudeDelta: 0.008,
+            longitudeDelta: 0.008
+          });
+        }
+      );
+    }, []);
+
+    useEffect(() => {
+      const getAccenturePoints = async () => {
+        const response = await getData.get<AccenturePoint[]>('all');
+
+        setAccenturePoints(response.data);
+      }
+
+      getAccenturePoints();
+    }, []);
 
     return (
         <View style={styles.container}>
             <MapView 
-            style={ styles.MapContainer } 
-            provider={ PROVIDER_GOOGLE }
-            initialRegion={{
-                latitude: -24.959060,
-                longitude: -53.465750,
-                latitudeDelta: 0.008,
-                longitudeDelta: 0.008
-            }}
+              style={ styles.MapContainer } 
+              provider={ PROVIDER_GOOGLE }
+              initialRegion={initialMarker}
             >
-
-            <Marker
+            { accenturePoints.map((point, index) => (
+              <Marker
                 icon={PinInsert}
                 coordinate={{
-                latitude: -24.959060,
-                longitude: -53.465750
+                  latitude: point.latitude,
+                  longitude: point.longitude
                 }}
-            >
+                key={ index }
+              >
                 <Callout
                     tooltip
-                    onPress={ handlePageDetails }
+                    onPress={ () => handlePageDetails(point.id) }
                 >
                 <View style={ styles.CalloutContainer } >
-                    <Text style={ styles.CalloutText }>Aqui estou</Text>
+                    <Text style={ styles.CalloutText }>{ point.name }</Text>
                 </View>
                 </Callout>
-            </Marker>
+              </Marker>
+            ))}
             </MapView>
 
             <View style={ styles.SearchContainer } >
-            <Text style={ styles.SearchText } >Texto qualquer</Text>
-            <RectButton style={ styles.SearchButton } >
-                <Feather name="search" size={20} color="#fff" />
-            </RectButton>
+              
+            <TextInput 
+              style={ styles.SearchText } 
+              placeholder="Pesquise aqui"
+            />
+              <RectButton style={ styles.SearchButton } >
+                  <Feather name="search" size={20} color="#fff" />
+              </RectButton>
             </View>
         </View>
   );
